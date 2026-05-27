@@ -25,7 +25,7 @@ const KANBAN_DATA = {
       "title": "Add more features",
       "body": "Charts, filters, and search functionality",
       "assignee": null,
-      "status": "ready",
+      "status": "todo",
       "priority": 3,
       "created_by": null,
       "created_at": 1779885149
@@ -35,7 +35,7 @@ const KANBAN_DATA = {
       "title": "Mobile optimization",
       "body": "Make dashboard responsive on mobile devices",
       "assignee": null,
-      "status": "ready",
+      "status": "todo",
       "priority": 2,
       "created_by": null,
       "created_at": 1779885149
@@ -45,7 +45,7 @@ const KANBAN_DATA = {
       "title": "API integration",
       "body": "Connect to external APIs for real-time updates",
       "assignee": null,
-      "status": "ready",
+      "status": "todo",
       "priority": 1,
       "created_by": null,
       "created_at": 1779885149
@@ -57,7 +57,7 @@ const KANBAN_DATA = {
       "name": "Default"
     }
   ],
-  "generated_at": "2026-05-27T21:12:32.387875",
+  "generated_at": "2026-05-28T07:30:00.000000",
   "source": "hermes-kanban",
-  "sync_id": "20260527211232"
+  "sync_id": "20260528073000"
 };
