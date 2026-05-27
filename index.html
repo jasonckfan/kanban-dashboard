@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hermes Kanban Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .kanban-column { min-height: 400px; }
-        .task-card { transition: all 0.2s ease; }
+        .task-card { transition: all 0.2s ease; cursor: pointer; }
         .task-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         .status-todo { border-left: 4px solid #6b7280; }
         .status-doing { border-left: 4px solid #3b82f6; }
         .status-done { border-left: 4px solid #10b981; }
         .status-blocked { border-left: 4px solid #ef4444; }
-        .priority-high { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
-        .priority-medium { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
-        .priority-low { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -30,27 +28,31 @@
                     <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Hermes Kanban</h1>
-                        <p class="text-sm text-gray-500">Dashboard</p>
+                        <p class="text-sm text-gray-500">Live Dashboard</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-500">Last updated: <span id="last-updated">-</span></span>
-                    <button onclick="location.reload()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-                        🔄 Refresh
+                    <div class="text-sm text-gray-500">
+                        <span id="task-count">0 tasks</span> • 
+                        <span id="last-updated">Loading...</span>
+                    </div>
+                    <button onclick="loadData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center space-x-2">
+                        <span>🔄</span>
+                        <span>Refresh</span>
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Stats Cards -->
+    <!-- Stats -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" id="stats-container">
             <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Total Tasks</p>
-                        <p class="text-2xl font-bold text-gray-900" id="stat-total">0</p>
+                        <p class="text-sm text-gray-500">Total</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-total">-</p>
                     </div>
                     <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">📋</div>
                 </div>
@@ -59,7 +61,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">To Do</p>
-                        <p class="text-2xl font-bold text-gray-600" id="stat-todo">0</p>
+                        <p class="text-2xl font-bold text-gray-600" id="stat-todo">-</p>
                     </div>
                     <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">⏳</div>
                 </div>
@@ -68,7 +70,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">In Progress</p>
-                        <p class="text-2xl font-bold text-blue-600" id="stat-doing">0</p>
+                        <p class="text-2xl font-bold text-blue-600" id="stat-doing">-</p>
                     </div>
                     <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">🔥</div>
                 </div>
@@ -76,8 +78,8 @@
             <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Completed</p>
-                        <p class="text-2xl font-bold text-green-600" id="stat-done">0</p>
+                        <p class="text-sm text-gray-500">Done</p>
+                        <p class="text-2xl font-bold text-green-600" id="stat-done">-</p>
                     </div>
                     <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">✅</div>
                 </div>
@@ -86,12 +88,13 @@
 
         <!-- Kanban Board -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">📊 Kanban Board</h2>
+                <div id="loading-indicator" class="text-sm text-gray-500 loading hidden">Loading...</div>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- To Do Column -->
+                    <!-- To Do -->
                     <div class="kanban-column bg-gray-50 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-semibold text-gray-700 flex items-center">
@@ -100,12 +103,12 @@
                             </h3>
                             <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full" id="count-todo">0</span>
                         </div>
-                        <div id="column-todo" class="space-y-2">
-                            <div class="text-center text-gray-400 py-8 text-sm">No tasks</div>
+                        <div id="column-todo" class="space-y-2 min-h-[200px]">
+                            <div class="text-center text-gray-400 py-8 text-sm">Loading...</div>
                         </div>
                     </div>
 
-                    <!-- In Progress Column -->
+                    <!-- In Progress -->
                     <div class="kanban-column bg-blue-50 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-semibold text-blue-700 flex items-center">
@@ -114,12 +117,12 @@
                             </h3>
                             <span class="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full" id="count-doing">0</span>
                         </div>
-                        <div id="column-doing" class="space-y-2">
-                            <div class="text-center text-blue-300 py-8 text-sm">No tasks</div>
+                        <div id="column-doing" class="space-y-2 min-h-[200px]">
+                            <div class="text-center text-blue-300 py-8 text-sm">Loading...</div>
                         </div>
                     </div>
 
-                    <!-- Done Column -->
+                    <!-- Done -->
                     <div class="kanban-column bg-green-50 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-semibold text-green-700 flex items-center">
@@ -128,12 +131,12 @@
                             </h3>
                             <span class="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full" id="count-done">0</span>
                         </div>
-                        <div id="column-done" class="space-y-2">
-                            <div class="text-center text-green-300 py-8 text-sm">No tasks</div>
+                        <div id="column-done" class="space-y-2 min-h-[200px]">
+                            <div class="text-center text-green-300 py-8 text-sm">Loading...</div>
                         </div>
                     </div>
 
-                    <!-- Blocked Column -->
+                    <!-- Blocked -->
                     <div class="kanban-column bg-red-50 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-semibold text-red-700 flex items-center">
@@ -142,57 +145,22 @@
                             </h3>
                             <span class="text-xs bg-red-200 text-red-700 px-2 py-1 rounded-full" id="count-blocked">0</span>
                         </div>
-                        <div id="column-blocked" class="space-y-2">
-                            <div class="text-center text-red-300 py-8 text-sm">No tasks</div>
+                        <div id="column-blocked" class="space-y-2 min-h-[200px]">
+                            <div class="text-center text-red-300 py-8 text-sm">Loading...</div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Recent Tasks Table -->
-        <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h2 class="text-lg font-semibold text-gray-900">📋 Recent Tasks</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 text-gray-600 font-medium">
-                        <tr>
-                            <th class="px-6 py-3">ID</th>
-                            <th class="px-6 py-3">Title</th>
-                            <th class="px-6 py-3">Status</th>
-                            <th class="px-6 py-3">Assignee</th>
-                            <th class="px-6 py-3">Priority</th>
-                            <th class="px-6 py-3">Created</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasks-table-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No tasks found</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
 
     <script src="kanban-data.js"></script>
     <script>
-        // Kanban data - will be populated by build script
-        // const KANBAN_DATA = { tasks: [], boards: [] }; // Now loaded from kanban-data.js
-
-        // Status mapping
-        const STATUS_MAP = {
-            'todo': { label: 'To Do', color: 'bg-gray-100 text-gray-700' },
-            'doing': { label: 'In Progress', color: 'bg-blue-100 text-blue-700' },
-            'done': { label: 'Done', color: 'bg-green-100 text-green-700' },
-            'blocked': { label: 'Blocked', color: 'bg-red-100 text-red-700' }
-        };
-
-        // Priority mapping
-        const PRIORITY_MAP = {
-            'high': { label: 'High', class: 'priority-high text-red-700' },
-            'medium': { label: 'Medium', class: 'priority-medium text-yellow-700' },
-            'low': { label: 'Low', class: 'priority-low text-blue-700' }
+        const STATUS_LABELS = {
+            'todo': 'To Do',
+            'doing': 'In Progress', 
+            'done': 'Done',
+            'blocked': 'Blocked'
         };
 
         function formatDate(timestamp) {
@@ -202,34 +170,51 @@
         }
 
         function renderTaskCard(task) {
-            const statusClass = `status-${task.status}`;
-            const priorityClass = task.priority > 5 ? 'priority-high' : task.priority > 2 ? 'priority-medium' : 'priority-low';
+            const priorityColors = {
+                5: 'bg-red-100 text-red-700',
+                4: 'bg-orange-100 text-orange-700',
+                3: 'bg-yellow-100 text-yellow-700',
+                2: 'bg-blue-100 text-blue-700',
+                1: 'bg-gray-100 text-gray-700',
+                0: 'bg-gray-100 text-gray-700'
+            };
+            const priorityClass = priorityColors[task.priority] || priorityColors[0];
             
             return `
-                <div class="task-card bg-white rounded-lg p-3 shadow-sm border border-gray-200 ${statusClass} ${priorityClass}">
+                <div class="task-card bg-white rounded-lg p-3 shadow-sm border border-gray-200 status-${task.status}">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-xs font-mono text-gray-400">${task.id.substring(0, 8)}</span>
-                        ${task.priority > 0 ? `<span class="text-xs px-1.5 py-0.5 rounded bg-opacity-50">P${task.priority}</span>` : ''}
+                        ${task.priority > 0 ? `<span class="text-xs px-1.5 py-0.5 rounded ${priorityClass}">P${task.priority}</span>` : ''}
                     </div>
-                    <h4 class="font-medium text-gray-900 text-sm mb-1 line-clamp-2">${task.title}</h4>
+                    <h4 class="font-medium text-gray-900 text-sm mb-1">${task.title}</h4>
                     ${task.assignee ? `<div class="text-xs text-gray-500">👤 ${task.assignee}</div>` : ''}
                 </div>
             `;
         }
 
-        function renderStatusBadge(status) {
-            const config = STATUS_MAP[status] || STATUS_MAP['todo'];
-            return `<span class="px-2 py-1 rounded-full text-xs font-medium ${config.color}">${config.label}</span>`;
-        }
-
-        function renderTasks() {
-            const tasks = KANBAN_DATA.tasks;
+        function loadData() {
+            const loading = document.getElementById('loading-indicator');
+            loading.classList.remove('hidden');
+            
+            // Check if data exists
+            if (typeof KANBAN_DATA === 'undefined') {
+                console.error('KANBAN_DATA not loaded');
+                loading.textContent = 'Error: Data not loaded';
+                return;
+            }
+            
+            const tasks = KANBAN_DATA.tasks || [];
             
             // Update stats
             document.getElementById('stat-total').textContent = tasks.length;
             document.getElementById('stat-todo').textContent = tasks.filter(t => t.status === 'todo').length;
             document.getElementById('stat-doing').textContent = tasks.filter(t => t.status === 'doing').length;
             document.getElementById('stat-done').textContent = tasks.filter(t => t.status === 'done').length;
+            
+            document.getElementById('task-count').textContent = `${tasks.length} tasks`;
+            document.getElementById('last-updated').textContent = KANBAN_DATA.generated_at 
+                ? new Date(KANBAN_DATA.generated_at).toLocaleString('zh-HK')
+                : 'Unknown';
             
             // Update column counts
             document.getElementById('count-todo').textContent = tasks.filter(t => t.status === 'todo').length;
@@ -254,29 +239,15 @@
                 }
             });
             
-            // Render table
-            const tableBody = document.getElementById('tasks-table-body');
-            if (tasks.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No tasks found</td></tr>';
-            } else {
-                tableBody.innerHTML = tasks.slice(0, 20).map(task => `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-3 font-mono text-xs text-gray-500">${task.id.substring(0, 8)}...</td>
-                        <td class="px-6 py-3 font-medium text-gray-900">${task.title}</td>
-                        <td class="px-6 py-3">${renderStatusBadge(task.status)}</td>
-                        <td class="px-6 py-3 text-gray-600">${task.assignee || '-'}</td>
-                        <td class="px-6 py-3">${task.priority > 0 ? `P${task.priority}` : '-'}</td>
-                        <td class="px-6 py-3 text-gray-500 text-xs">${formatDate(task.created_at)}</td>
-                    </tr>
-                `).join('');
-            }
-            
-            // Update timestamp
-            document.getElementById('last-updated').textContent = new Date().toLocaleString('zh-HK');
+            loading.classList.add('hidden');
+            console.log('Dashboard updated:', tasks.length, 'tasks');
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', renderTasks);
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>
