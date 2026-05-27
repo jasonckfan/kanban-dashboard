@@ -8,7 +8,12 @@ const KANBAN_DATA = {
       "status": "done",
       "priority": 5,
       "created_by": null,
-      "created_at": 1779885149
+      "created_at": 1779885149,
+      "started_at": null,
+      "completed_at": null,
+      "workspace_kind": "scratch",
+      "workspace_path": null,
+      "result": null
     },
     {
       "id": "task-002",
@@ -18,7 +23,12 @@ const KANBAN_DATA = {
       "status": "done",
       "priority": 4,
       "created_by": null,
-      "created_at": 1779885149
+      "created_at": 1779885149,
+      "started_at": null,
+      "completed_at": null,
+      "workspace_kind": "scratch",
+      "workspace_path": null,
+      "result": null
     },
     {
       "id": "task-003",
@@ -28,7 +38,12 @@ const KANBAN_DATA = {
       "status": "ready",
       "priority": 3,
       "created_by": null,
-      "created_at": 1779885149
+      "created_at": 1779885149,
+      "started_at": null,
+      "completed_at": null,
+      "workspace_kind": "scratch",
+      "workspace_path": null,
+      "result": null
     },
     {
       "id": "task-004",
@@ -38,7 +53,12 @@ const KANBAN_DATA = {
       "status": "ready",
       "priority": 2,
       "created_by": null,
-      "created_at": 1779885149
+      "created_at": 1779885149,
+      "started_at": null,
+      "completed_at": null,
+      "workspace_kind": "scratch",
+      "workspace_path": null,
+      "result": null
     },
     {
       "id": "task-005",
@@ -48,16 +68,21 @@ const KANBAN_DATA = {
       "status": "ready",
       "priority": 1,
       "created_by": null,
-      "created_at": 1779885149
+      "created_at": 1779885149,
+      "started_at": null,
+      "completed_at": null,
+      "workspace_kind": "scratch",
+      "workspace_path": null,
+      "result": null
     }
   ],
   "boards": [
     {
       "slug": "default",
-      "name": "Default"
+      "name": "Default",
+      "description": "Default board"
     }
   ],
-  "generated_at": "2026-05-27T21:12:32.387875",
-  "source": "hermes-kanban",
-  "sync_id": "20260527211232"
+  "generated_at": "2026-05-27T21:18:56.436522",
+  "source": "hermes-kanban"
 };
